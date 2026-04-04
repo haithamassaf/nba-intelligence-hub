@@ -118,6 +118,7 @@ with st.sidebar:
         '<div class="hub-header">'
         '<h1>🏀 NBA Intelligence Hub</h1>'
         '<p>AI-powered NBA analytics</p>'
+        '<p style="color:#555;font-size:12px;margin-top:8px">Built by Haitham Assaf</p>'
         '</div>',
         unsafe_allow_html=True,
     )
