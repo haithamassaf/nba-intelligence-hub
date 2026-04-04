@@ -1,3 +1,4 @@
 """Root entry point for Streamlit Cloud deployment."""
 
-from frontend.app import *  # noqa — Streamlit executes the module top-level
+import runpy
+runpy.run_path("frontend/app.py", run_name="__main__")

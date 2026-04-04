@@ -4,20 +4,12 @@ pandas>=2.0.0
 
 # RAG & Embeddings
 chromadb>=0.4.0
-sentence-transformers>=2.2.0
 
 # LLM
 anthropic>=0.39.0
-
-# API
-fastapi>=0.110.0
-uvicorn>=0.27.0
 
 # Frontend
 streamlit>=1.30.0
 
 # Config
 python-dotenv>=1.0.0
-
-# Install project packages
--e .
