@@ -18,3 +18,6 @@ streamlit>=1.30.0
 
 # Config
 python-dotenv>=1.0.0
+
+# Install project packages
+-e .
