@@ -111,6 +111,15 @@ if "last_classification" not in st.session_state:
     st.session_state.last_classification = None
 
 
+# ── Auto-seed vector store on first run ──────────────────────────────
+
+if vector_count() == 0:
+    with st.spinner("First launch — fetching live NBA data and building vector store. This takes about 30 seconds..."):
+        rebuild_data(fresh=True)
+    st.session_state.last_refreshed = datetime.now().strftime("%b %d, %I:%M %p")
+    st.rerun()
+
+
 # ── Sidebar ──────────────────────────────────────────────────────────
 
 with st.sidebar:
