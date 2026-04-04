@@ -16,8 +16,8 @@ def _get_all_players() -> pd.DataFrame:
     return df[df["games_played"] >= 20].reset_index(drop=True)
 
 
-def _stat_comparison_bar(label: str, val1: float, val2: float, name1: str, name2: str, color1: str, color2: str, higher_is_better: bool = True):
-    """Render a visual comparison bar for one stat."""
+def _stat_row(label: str, val1: float, val2: float, color1: str, color2: str, higher_is_better: bool = True):
+    """Render one stat comparison row using Streamlit columns."""
     max_val = max(val1, val2, 0.01)
 
     if higher_is_better:
@@ -25,29 +25,41 @@ def _stat_comparison_bar(label: str, val1: float, val2: float, name1: str, name2
     else:
         winner = 1 if val1 <= val2 else 2
 
-    w1 = "700" if winner == 1 else "400"
-    w2 = "700" if winner == 2 else "400"
+    left, center, right = st.columns([2, 1, 2])
 
-    st.markdown(
-        f"""
-        <div style="margin-bottom:12px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-                <span style="color:{color1};font-weight:{w1};font-size:15px">{val1:.1f}</span>
-                <span style="color:#888;font-size:13px;font-weight:600">{label}</span>
-                <span style="color:{color2};font-weight:{w2};font-size:15px">{val2:.1f}</span>
-            </div>
-            <div style="display:flex;gap:4px;height:8px">
-                <div style="flex:1;display:flex;justify-content:flex-end">
-                    <div style="width:{val1/max_val*100:.0f}%;background:{color1};border-radius:4px;opacity:{'1' if winner==1 else '0.4'}"></div>
+    with left:
+        w = "700" if winner == 1 else "400"
+        bar_pct = val1 / max_val * 100
+        st.markdown(
+            f"""<div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;height:32px">
+                <span style="color:{color1};font-weight:{w};font-size:16px;min-width:45px;text-align:right">{val1:.1f}</span>
+                <div style="width:60%;height:10px;background:#2a2a2a;border-radius:5px;overflow:hidden;direction:rtl">
+                    <div style="width:{bar_pct:.0f}%;height:100%;background:{color1};border-radius:5px;opacity:{'1.0' if winner==1 else '0.35'}"></div>
                 </div>
-                <div style="flex:1">
-                    <div style="width:{val2/max_val*100:.0f}%;background:{color2};border-radius:4px;opacity:{'1' if winner==2 else '0.4'}"></div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+
+    with center:
+        st.markdown(
+            f"""<div style="text-align:center;height:32px;line-height:32px;color:#8b949e;font-weight:600;font-size:13px">
+                {label}
+            </div>""",
+            unsafe_allow_html=True,
+        )
+
+    with right:
+        w = "700" if winner == 2 else "400"
+        bar_pct = val2 / max_val * 100
+        st.markdown(
+            f"""<div style="display:flex;align-items:center;gap:10px;height:32px">
+                <div style="width:60%;height:10px;background:#2a2a2a;border-radius:5px;overflow:hidden">
+                    <div style="width:{bar_pct:.0f}%;height:100%;background:{color2};border-radius:5px;opacity:{'1.0' if winner==2 else '0.35'}"></div>
                 </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+                <span style="color:{color2};font-weight:{w};font-size:16px;min-width:45px">{val2:.1f}</span>
+            </div>""",
+            unsafe_allow_html=True,
+        )
 
 
 def render_comparison():
@@ -75,16 +87,16 @@ def render_comparison():
     # Header
     h1, h2 = st.columns(2)
     h1.markdown(
-        f"<div style='text-align:center;padding:12px'>"
+        f"<div style='text-align:center;padding:16px 0'>"
         f"<div style='font-size:22px;font-weight:700;color:{color1}'>{p1_name}</div>"
-        f"<div style='color:#888;font-size:14px'>{p1['team']} | {int(p1['games_played'])} GP | Age {p1['age']:.0f}</div>"
+        f"<div style='color:#8b949e;font-size:14px;margin-top:4px'>{p1['team']} | {int(p1['games_played'])} GP | Age {p1['age']:.0f}</div>"
         f"</div>",
         unsafe_allow_html=True,
     )
     h2.markdown(
-        f"<div style='text-align:center;padding:12px'>"
+        f"<div style='text-align:center;padding:16px 0'>"
         f"<div style='font-size:22px;font-weight:700;color:{color2}'>{p2_name}</div>"
-        f"<div style='color:#888;font-size:14px'>{p2['team']} | {int(p2['games_played'])} GP | Age {p2['age']:.0f}</div>"
+        f"<div style='color:#8b949e;font-size:14px;margin-top:4px'>{p2['team']} | {int(p2['games_played'])} GP | Age {p2['age']:.0f}</div>"
         f"</div>",
         unsafe_allow_html=True,
     )
@@ -108,11 +120,10 @@ def render_comparison():
     for label, col, higher_better in comparisons:
         v1 = p1[col]
         v2 = p2[col]
-        # Show percentages as whole numbers
         if col in ("fg_pct", "fg3_pct", "ft_pct"):
             v1 = v1 * 100
             v2 = v2 * 100
-        _stat_comparison_bar(label, v1, v2, p1_name, p2_name, color1, color2, higher_better)
+        _stat_row(label, v1, v2, color1, color2, higher_better)
 
     # Summary table
     st.markdown("---")
