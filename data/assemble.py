@@ -1,121 +1,65 @@
 """
-Assemble per-team roster tables for display and trades. No grading: rosters are
-merged with season stats (and, for the NFL, OverTheCap APY) and returned as-is.
+Assemble per-team roster tables for display.
+
+NFL: ESPN live rosters (current, no stale-season issues) merged with
+     OverTheCap contract data by player name for salary context.
+NBA: nba_api rosters merged with league-wide player stats.
 """
 
 import pandas as pd
 
 from data import fetch_stats as nba_data
 from data import nfl_fetch as nfl_data
-from data import cap_hits as nfl_cap_hits
-from data.rookie_scale import (
-    estimate_rookie_apy,
-    MIN_VALID_APY,
-    MAX_VALID_APY,
-    ROOKIE_APY_CEILING,
-)
+from data import espn_nfl
 
 
-def _draft_pick(row):
-    for c in ("draft_number", "draft_ovr", "draft_pick", "entry_draft_pick"):
-        if c in row and pd.notna(row.get(c)):
-            return row.get(c)
-    return None
-
-
-def _draft_round(row):
-    for c in ("draft_round", "entry_draft_round"):
-        if c in row and pd.notna(row.get(c)):
-            return row.get(c)
-    return None
-
-
-def _validate_and_fill_apy(rosters: pd.DataFrame) -> pd.DataFrame:
+def _merge_contracts_by_name(rosters: pd.DataFrame) -> pd.DataFrame:
     """
-    Validate merged APY and fill rookies with a slotted estimate.
+    Attach OverTheCap APY to the ESPN roster by matching player names.
 
-    Any APY outside the sane range, or a rookie APY above the rookie ceiling, is
-    cleared so it can never be shown or used in the cap math. Rookies (no accrued
-    seasons) left without a valid APY get an estimate from their draft slot. The
-    apy_status column records where each value came from: verified, rookie
-    estimate, or unavailable.
+    gsis_id is not available from ESPN, so we join on normalised full name.
+    The match is case-insensitive and strips whitespace. Where a name
+    appears more than once in contracts we keep the highest APY (most
+    recent/biggest deal).
     """
-    if "apy" not in rosters.columns:
+    try:
+        contracts = nfl_data.get_contracts()
+    except Exception:
         rosters["apy"] = float("nan")
+        return rosters
 
-    apy = pd.to_numeric(rosters["apy"], errors="coerce")
+    if contracts.empty or "apy" not in contracts.columns:
+        rosters["apy"] = float("nan")
+        return rosters
 
-    if "years_exp" in rosters.columns:
-        exp = pd.to_numeric(rosters["years_exp"], errors="coerce")
-    else:
-        exp = pd.Series(index=rosters.index, dtype="float64")
-    is_rookie = exp.fillna(99) <= 0
+    name_col = next((c for c in ("player", "player_name") if c in contracts.columns), None)
+    if name_col is None:
+        rosters["apy"] = float("nan")
+        return rosters
 
-    bad = (apy < MIN_VALID_APY) | (apy > MAX_VALID_APY) | (is_rookie & (apy > ROOKIE_APY_CEILING))
-    apy = apy.where(~bad)
+    ctdf = contracts[[name_col, "apy"]].copy()
+    ctdf["_key"] = ctdf[name_col].astype(str).str.strip().str.lower()
+    ctdf = ctdf.sort_values("apy", ascending=False).drop_duplicates("_key", keep="first")
 
-    status = pd.Series("verified", index=rosters.index)
-    status = status.where(apy.notna(), "unavailable")
-
-    need_est = apy.isna() & is_rookie
-    if need_est.any():
-        est = rosters.loc[need_est].apply(
-            lambda r: estimate_rookie_apy(_draft_pick(r), _draft_round(r)), axis=1
-        )
-        apy.loc[need_est] = pd.to_numeric(est, errors="coerce")
-        status.loc[need_est] = "rookie estimate"
-
-    rosters["apy"] = apy.round(2)
-    rosters["apy_status"] = status
+    rosters["_key"] = rosters["player_name"].astype(str).str.strip().str.lower()
+    rosters = rosters.merge(ctdf[["_key", "apy"]], on="_key", how="left")
+    rosters = rosters.drop(columns=["_key"])
     return rosters
 
 
 def build_nfl_roster() -> tuple[pd.DataFrame, pd.DataFrame]:
-    rosters = nfl_data.get_rosters()
+    """
+    Live NFL roster from ESPN merged with OverTheCap salary by name.
+    Returns (roster_df, teams_df).
+    """
+    teams_df = espn_nfl.get_teams()
+    rosters = espn_nfl.get_all_rosters(teams_df)
+
     if rosters.empty:
-        return rosters, pd.DataFrame()
+        return rosters, teams_df
 
-    if "player_name" not in rosters.columns and "full_name" in rosters.columns:
-        rosters = rosters.rename(columns={"full_name": "player_name"})
-
-    # nflverse rosters carry a birth date but not age; derive it (column name varies).
-    if "age" not in rosters.columns:
-        bd_col = next((c for c in ["birth_date", "birthdate", "birth_dt", "dob"] if c in rosters.columns), None)
-        if bd_col:
-            bd = pd.to_datetime(rosters[bd_col], errors="coerce")
-            rosters["age"] = ((pd.Timestamp.today() - bd).dt.days / 365.25).round(1)
-        elif "birth_year" in rosters.columns:
-            yr = pd.to_numeric(rosters["birth_year"], errors="coerce")
-            rosters["age"] = (pd.Timestamp.today().year - yr).round(1)
-
-    stats = nfl_data.get_player_season_stats()
-    if not stats.empty and "player_id" in stats.columns and "gsis_id" in rosters.columns:
-        stats = stats.rename(columns={"player_id": "gsis_id"})
-        cols = [c for c in stats.columns if c not in rosters.columns or c == "gsis_id"]
-        rosters = rosters.merge(stats[cols], on="gsis_id", how="left")
-
-    contracts = nfl_data.get_contracts()
-    if not contracts.empty and "gsis_id" in contracts.columns and "gsis_id" in rosters.columns and "apy" in contracts.columns:
-        rosters = rosters.merge(contracts[["gsis_id", "apy"]].drop_duplicates("gsis_id"), on="gsis_id", how="left")
-    else:
-        rosters["apy"] = float("nan")
-
-    rosters = _validate_and_fill_apy(rosters)
-
-    # Current-season cap hit (varies by season, unlike the flat contract APY).
-    try:
-        hits = nfl_cap_hits.get_current_cap_hits(nfl_data.roster_season())
-        if not hits.empty and "gsis_id" in rosters.columns:
-            rosters = rosters.merge(hits[["gsis_id", "cap_hit"]], on="gsis_id", how="left")
-    except Exception:
-        pass
-    if "cap_hit" in rosters.columns:
-        ch = pd.to_numeric(rosters["cap_hit"], errors="coerce")
-        rosters["cap_hit"] = ch.where((ch >= MIN_VALID_APY) & (ch <= MAX_VALID_APY)).round(2)
-    else:
-        rosters["cap_hit"] = float("nan")
-
-    return rosters, nfl_data.get_team_meta()
+    rosters = _merge_contracts_by_name(rosters)
+    return rosters, teams_df
 
 
 def build_nba_roster() -> tuple[pd.DataFrame, pd.DataFrame]:
