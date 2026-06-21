@@ -17,6 +17,16 @@ def build_nfl_roster() -> tuple[pd.DataFrame, pd.DataFrame]:
     if "player_name" not in rosters.columns and "full_name" in rosters.columns:
         rosters = rosters.rename(columns={"full_name": "player_name"})
 
+    # nflverse rosters carry a birth date but not age; derive it (column name varies).
+    if "age" not in rosters.columns:
+        bd_col = next((c for c in ["birth_date", "birthdate", "birth_dt", "dob"] if c in rosters.columns), None)
+        if bd_col:
+            bd = pd.to_datetime(rosters[bd_col], errors="coerce")
+            rosters["age"] = ((pd.Timestamp.today() - bd).dt.days / 365.25).round(1)
+        elif "birth_year" in rosters.columns:
+            yr = pd.to_numeric(rosters["birth_year"], errors="coerce")
+            rosters["age"] = (pd.Timestamp.today().year - yr).round(1)
+
     stats = nfl_data.get_player_season_stats()
     if not stats.empty and "player_id" in stats.columns and "gsis_id" in rosters.columns:
         stats = stats.rename(columns={"player_id": "gsis_id"})

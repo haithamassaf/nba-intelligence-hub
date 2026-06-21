@@ -115,22 +115,31 @@ def nba_names(teams):
     return dict(zip(teams["abbreviation"], teams["full_name"]))
 
 
+def _col_mean(df, col, nd=1):
+    if col not in df.columns:
+        return None
+    s = pd.to_numeric(df[col], errors="coerce")
+    return round(float(s.mean()), nd) if s.notna().any() else None
+
+
+def _col_sum(df, col, nd=1):
+    if col not in df.columns:
+        return None
+    s = pd.to_numeric(df[col], errors="coerce")
+    return round(float(s.fillna(0).sum()), nd)
+
+
 def nfl_summary(df):
-    age = pd.to_numeric(df.get("age"), errors="coerce")
-    apy = pd.to_numeric(df.get("apy"), errors="coerce")
     return {"Players": int(len(df)),
-            "Avg age": round(age.mean(), 1) if age.notna().any() else None,
-            "Total APY ($M)": round(apy.fillna(0).sum(), 1)}
+            "Avg age": _col_mean(df, "age"),
+            "Total APY ($M)": _col_sum(df, "apy")}
 
 
 def nba_summary(df):
-    age = pd.to_numeric(df.get("AGE"), errors="coerce")
-    pts = pd.to_numeric(df.get("PTS"), errors="coerce")
-    pm = pd.to_numeric(df.get("PLUS_MINUS"), errors="coerce")
     return {"Players": int(len(df)),
-            "Avg age": round(age.mean(), 1) if age.notna().any() else None,
-            "Total PPG": round(pts.fillna(0).sum(), 1),
-            "Avg +/-": round(pm.mean(), 2) if pm.notna().any() else None}
+            "Avg age": _col_mean(df, "AGE"),
+            "Total PPG": _col_sum(df, "PTS"),
+            "Avg +/-": _col_mean(df, "PLUS_MINUS", nd=2)}
 
 
 def render_roster_view(table, team_col, name_for, cols, key):
@@ -152,7 +161,10 @@ def nfl_section(table, teams):
     if view == "Rosters":
         render_roster_view(table, "team", names, NFL_COLS, "nfl")
     elif view == "Compare players":
-        render_player_compare(table, "player_name", "gsis_id", nfl_get_splits, NFL_RADAR, NFL_COMPARE_STATS, "nfl")
+        render_player_compare(
+            table, "player_name", "gsis_id", nfl_get_splits, NFL_RADAR, NFL_COMPARE_STATS, "nfl",
+            no_data_hint="The free NFL data covers passing, rushing, receiving, and kicking, so offensive and defensive linemen have no stats here. Try skill-position players or kickers.",
+        )
     elif view == "Compare rosters":
         render_roster_compare(table, "team", names, nfl_summary, NFL_COLS, "nfl")
     else:

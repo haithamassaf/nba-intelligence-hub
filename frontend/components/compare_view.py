@@ -20,7 +20,7 @@ def _name_to_id(df, name_col, id_col):
     return dict(zip(d[name_col].astype(str), d[id_col]))
 
 
-def render_player_compare(table, name_col, id_col, get_splits, radar_keys, stat_labels, key):
+def render_player_compare(table, name_col, id_col, get_splits, radar_keys, stat_labels, key, no_data_hint=""):
     """
     get_splits(player_id) -> {season_label: {stat: value}}, incl. a "Career" entry.
     radar_keys / stat_labels: list of (stat_key, display_label).
@@ -45,7 +45,10 @@ def render_player_compare(table, name_col, id_col, get_splits, radar_keys, stat_
 
     opts = season_options(sa, sb)
     if not opts:
-        st.warning("No historical stats available for these players.")
+        msg = "No season stats available for these two players."
+        if no_data_hint:
+            msg += " " + no_data_hint
+        st.warning(msg)
         return
     season = st.selectbox("Season", opts, key=f"{key}_season")
 
