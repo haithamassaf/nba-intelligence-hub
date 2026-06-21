@@ -12,6 +12,7 @@ import pandas as pd
 import nflreadpy as nfl
 
 from config.settings import NFL_STATS_SEASON, NFL_ROSTER_SEASON
+from data.rookie_scale import MIN_VALID_APY, MAX_VALID_APY
 
 
 def stats_season() -> int:
@@ -50,8 +51,22 @@ def get_player_season_stats(season: int | None = None) -> pd.DataFrame:
     return _pd(nfl.load_player_stats(seasons=[season or stats_season()], summary_level="reg"))
 
 
+def _clean_apy(series) -> pd.Series:
+    """APY in $M with out-of-range values (feed errors) set to NaN."""
+    apy = pd.to_numeric(series, errors="coerce")
+    return apy.where((apy >= MIN_VALID_APY) & (apy <= MAX_VALID_APY))
+
+
 def get_contracts() -> pd.DataFrame:
-    """Active player contracts from OverTheCap (apy, guaranteed, gsis_id)."""
+    """
+    Active player contracts from OverTheCap (apy in $M, keyed by gsis_id).
+
+    APY values outside the sane range are treated as feed errors and dropped, so
+    a bad number can never reach the roster. For each player we keep the most
+    recent still-valid contract, which prevents a stale or restructured row from
+    overriding the current one. Rows without a gsis_id are dropped because they
+    cannot be joined reliably.
+    """
     df = _pd(nfl.load_contracts())
     if df.empty:
         return df
@@ -59,10 +74,19 @@ def get_contracts() -> pd.DataFrame:
         df = df[df["is_active"] == True]  # noqa: E712
     keep = [c for c in ("player", "position", "team", "gsis_id", "apy", "guaranteed",
                         "value", "years", "year_signed") if c in df.columns]
-    df = df[keep]
+    df = df[keep].copy()
+
+    if "apy" in df.columns:
+        df["apy"] = _clean_apy(df["apy"])
+        df = df[df["apy"].notna()]          # drop rows whose APY failed validation
+
     if "gsis_id" in df.columns:
-        sort_col = "year_signed" if "year_signed" in df.columns else "apy"
-        df = df.sort_values(sort_col, ascending=False).drop_duplicates("gsis_id", keep="first")
+        df = df[df["gsis_id"].notna()]      # a null id cannot be joined reliably
+        sort_cols = [c for c in ("year_signed", "apy") if c in df.columns]
+        if sort_cols:
+            df = df.sort_values(sort_cols, ascending=False)
+        df = df.drop_duplicates("gsis_id", keep="first")
+
     return df.reset_index(drop=True)
 
 

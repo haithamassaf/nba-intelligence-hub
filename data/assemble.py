@@ -7,6 +7,66 @@ import pandas as pd
 
 from data import fetch_stats as nba_data
 from data import nfl_fetch as nfl_data
+from data.rookie_scale import (
+    estimate_rookie_apy,
+    MIN_VALID_APY,
+    MAX_VALID_APY,
+    ROOKIE_APY_CEILING,
+)
+
+
+def _draft_pick(row):
+    for c in ("draft_number", "draft_ovr", "draft_pick", "entry_draft_pick"):
+        if c in row and pd.notna(row.get(c)):
+            return row.get(c)
+    return None
+
+
+def _draft_round(row):
+    for c in ("draft_round", "entry_draft_round"):
+        if c in row and pd.notna(row.get(c)):
+            return row.get(c)
+    return None
+
+
+def _validate_and_fill_apy(rosters: pd.DataFrame) -> pd.DataFrame:
+    """
+    Validate merged APY and fill rookies with a slotted estimate.
+
+    Any APY outside the sane range, or a rookie APY above the rookie ceiling, is
+    cleared so it can never be shown or used in the cap math. Rookies (no accrued
+    seasons) left without a valid APY get an estimate from their draft slot. The
+    apy_status column records where each value came from: verified, rookie
+    estimate, or unavailable.
+    """
+    if "apy" not in rosters.columns:
+        rosters["apy"] = float("nan")
+
+    apy = pd.to_numeric(rosters["apy"], errors="coerce")
+
+    if "years_exp" in rosters.columns:
+        exp = pd.to_numeric(rosters["years_exp"], errors="coerce")
+    else:
+        exp = pd.Series(index=rosters.index, dtype="float64")
+    is_rookie = exp.fillna(99) <= 0
+
+    bad = (apy < MIN_VALID_APY) | (apy > MAX_VALID_APY) | (is_rookie & (apy > ROOKIE_APY_CEILING))
+    apy = apy.where(~bad)
+
+    status = pd.Series("verified", index=rosters.index)
+    status = status.where(apy.notna(), "unavailable")
+
+    need_est = apy.isna() & is_rookie
+    if need_est.any():
+        est = rosters.loc[need_est].apply(
+            lambda r: estimate_rookie_apy(_draft_pick(r), _draft_round(r)), axis=1
+        )
+        apy.loc[need_est] = pd.to_numeric(est, errors="coerce")
+        status.loc[need_est] = "rookie estimate"
+
+    rosters["apy"] = apy.round(2)
+    rosters["apy_status"] = status
+    return rosters
 
 
 def build_nfl_roster() -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -38,6 +98,8 @@ def build_nfl_roster() -> tuple[pd.DataFrame, pd.DataFrame]:
         rosters = rosters.merge(contracts[["gsis_id", "apy"]].drop_duplicates("gsis_id"), on="gsis_id", how="left")
     else:
         rosters["apy"] = float("nan")
+
+    rosters = _validate_and_fill_apy(rosters)
 
     return rosters, nfl_data.get_team_meta()
 
