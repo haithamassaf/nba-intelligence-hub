@@ -77,3 +77,28 @@ def pick_curve(pick: float, last_pick: int = 262) -> float:
     frac = (pick - 1) / max(1, last_pick - 1)
     score = 99.0 * (1.0 - frac) ** 1.6 + 40.0 * frac
     return clamp(score, 30.0, 99.0)
+
+
+# Percentile -> grade-score anchors. The composite of a player's component
+# percentiles is uniform (median 50), so mapping it straight onto academic
+# letter bands would fail every average player. This curve places the league
+# median at a C+, quality starters in the B range, stars at A, the elite at A+,
+# and only the bottom few percent at F, which matches how talent is read.
+_CURVE = [
+    (0, 45), (3, 56), (10, 63), (25, 70), (40, 75),
+    (50, 78), (60, 81), (70, 84), (80, 87), (85, 89),
+    (90, 91), (93, 93), (96, 95), (98, 96), (100, 99),
+]
+
+
+def grade_curve(p: float) -> float:
+    """Map a 0-100 percentile composite to a 0-100 grade score via _CURVE."""
+    if p is None or (isinstance(p, float) and math.isnan(p)):
+        return float("nan")
+    p = clamp(p)
+    for (x0, y0), (x1, y1) in zip(_CURVE, _CURVE[1:]):
+        if p <= x1:
+            if x1 == x0:
+                return y1
+            return y0 + (y1 - y0) * (p - x0) / (x1 - x0)
+    return _CURVE[-1][1]

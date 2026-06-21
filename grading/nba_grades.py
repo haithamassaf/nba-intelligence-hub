@@ -10,7 +10,7 @@ Plus-minus and net rating feed the impact component directly.
 import math
 import pandas as pd
 
-from grading.scale import percentile_scores, weighted_blend, to_letter
+from grading.scale import percentile_scores, weighted_blend, to_letter, grade_curve
 
 MIN_GP_FULL = 20      # below this, the grade is flagged as a limited sample
 
@@ -106,5 +106,6 @@ def grade_players(df: pd.DataFrame) -> pd.DataFrame:
 
     gp = _col(out, "GP")
     out["limited_sample"] = gp < MIN_GP_FULL
+    out["grade"] = out["grade"].map(grade_curve)
     out["letter"] = out["grade"].map(to_letter)
     return out

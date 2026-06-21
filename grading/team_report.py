@@ -35,6 +35,7 @@ def position_grades(df: pd.DataFrame, group_col: str, weight_col: str) -> dict:
     """
     out = {}
     graded = df[df["grade"].notna()]
+    name_col = next((c for c in ("player_name", "PLAYER_NAME", "PLAYER", "player") if c in graded.columns), None)
     for grp, sub in graded.groupby(group_col):
         w = _num(sub[weight_col]) if weight_col in sub.columns else pd.Series([float("nan")] * len(sub), index=sub.index)
         if w.notna().sum() == 0 or w.fillna(0).sum() == 0:
@@ -46,7 +47,7 @@ def position_grades(df: pd.DataFrame, group_col: str, weight_col: str) -> dict:
 
         order = sub.assign(_w=w).sort_values("_w", ascending=False)
         n_top = STARTERS.get(grp, 2)
-        top = [(r["player_name"], round(float(r["grade"]), 1),
+        top = [(r[name_col] if name_col else "Unknown", round(float(r["grade"]), 1),
                 ("R" if bool(r.get("rookie", False)) else ""))
                for _, r in order.head(n_top).iterrows()]
         out[grp] = {

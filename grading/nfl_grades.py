@@ -15,7 +15,7 @@ import re
 import math
 import pandas as pd
 
-from grading.scale import percentile_scores, weighted_blend, to_letter, pick_curve
+from grading.scale import percentile_scores, weighted_blend, to_letter, pick_curve, grade_curve
 
 # Roster position -> grading group
 GROUPS = {
@@ -373,6 +373,7 @@ def grade_all(inputs: dict, college_wide: pd.DataFrame | None = None) -> pd.Data
             table.loc[rg.index, "grade"] = rg.values
             table.loc[rg.index, "graded_as"] = "rookie"
 
+    table["grade"] = table["grade"].map(grade_curve)
     table["letter"] = table["grade"].map(to_letter)
     return table
 
