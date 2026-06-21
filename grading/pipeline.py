@@ -26,6 +26,12 @@ def build_nfl_graded() -> tuple[pd.DataFrame, pd.DataFrame]:
             graded["_wt"] = wt
         else:
             graded["_wt"] = 0.0
+        # Attach OverTheCap APY (for the trade simulator) by gsis_id.
+        contracts = inputs.get("contracts", pd.DataFrame())
+        if not contracts.empty and "gsis_id" in contracts.columns and "gsis_id" in graded.columns and "apy" in contracts.columns:
+            graded = graded.merge(contracts[["gsis_id", "apy"]].drop_duplicates("gsis_id"), on="gsis_id", how="left")
+        else:
+            graded["apy"] = float("nan")
     return graded, inputs.get("teams", pd.DataFrame())
 
 

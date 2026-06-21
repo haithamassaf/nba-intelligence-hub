@@ -104,6 +104,25 @@ def get_players() -> pd.DataFrame:
     return _pd(nfl.load_players())
 
 
+def get_contracts() -> pd.DataFrame:
+    """
+    Active player contracts from OverTheCap (apy, guaranteed, gsis_id).
+    One row per player: the active contract, deduped by gsis_id.
+    """
+    df = _pd(nfl.load_contracts())
+    if df.empty:
+        return df
+    if "is_active" in df.columns:
+        df = df[df["is_active"] == True]  # noqa: E712
+    keep = [c for c in ("player", "position", "team", "gsis_id", "apy", "guaranteed",
+                        "value", "years", "year_signed", "apy_cap_pct") if c in df.columns]
+    df = df[keep]
+    if "gsis_id" in df.columns:
+        sort_col = "year_signed" if "year_signed" in df.columns else "apy"
+        df = df.sort_values(sort_col, ascending=False).drop_duplicates("gsis_id", keep="first")
+    return df.reset_index(drop=True)
+
+
 # ── Rookie inputs (draft capital + athletic testing) ─────────────────
 
 def get_draft_picks(year: int | None = None) -> pd.DataFrame:
@@ -160,6 +179,7 @@ def fetch_grading_inputs() -> dict[str, pd.DataFrame]:
         "combine": _safe("combine", lambda: get_combine(d)),
         "teams": _safe("teams", get_team_meta),
         "schedules": _safe("schedules", lambda: get_schedules(s)),
+        "contracts": _safe("contracts", get_contracts),
     }
 
 

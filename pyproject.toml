@@ -1,11 +1,11 @@
 [project]
 name = "nba-intelligence-hub"
-version = "3.0.0"
-description = "NFL & NBA roster grader: per-position grades from advanced stats, team needs, and award/champion projections"
+version = "3.1.0"
+description = "NFL & NBA roster grader with cap-legal NFL trade simulator: position grades, team needs, player compare, stats"
 requires-python = ">=3.11"
 
 [tool.setuptools.packages.find]
-include = ["config*", "data*", "grading*", "summary*", "api*", "frontend*"]
+include = ["config*", "data*", "grading*", "summary*", "trade*", "api*", "frontend*"]
 
 [build-system]
 requires = ["setuptools>=64"]

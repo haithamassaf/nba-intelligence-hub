@@ -36,6 +36,11 @@ NFL_STATS_SEASON = os.getenv("NFL_STATS_SEASON")     # e.g. "2025"; None -> late
 NFL_ROSTER_SEASON = os.getenv("NFL_ROSTER_SEASON")   # e.g. "2026"; None -> current
 NFL_DRAFT_YEAR = os.getenv("NFL_DRAFT_YEAR")         # e.g. "2026"; None -> current roster year
 
+# NFL salary cap for the current league year (in $M), used by the trade simulator.
+# Set this to the current cap for exact room; net cap change between teams is
+# exact regardless of this value. OverTheCap APY is the per-player charge basis.
+NFL_SALARY_CAP = float(os.getenv("NFL_SALARY_CAP", "300.0"))
+
 # College season the current rookie class last played (for rookie grading).
 COLLEGE_SEASON = int(os.getenv("COLLEGE_SEASON", "2025"))
 

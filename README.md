@@ -1,8 +1,10 @@
-# NFL & NBA Roster Grader
+# NFL & NBA Roster Grader + Trade Simulator
 
 Pick a team in either league and see every position graded 0-100 against league
 peers from advanced stats, a full roster table, and an offseason improvement
-summary. Built for evaluating roster construction the way a front office would.
+summary. Compare any two players, browse stats, and (NFL) run cap-legal trades
+that show how each side's grades move. Built for evaluating roster construction
+the way a front office would.
 
 No faked numbers. Where a metric is paywalled or not publicly available, it is
 dropped rather than estimated, and the grade renormalizes around what is real.
@@ -24,6 +26,11 @@ dropped rather than estimated, and the grade renormalizes around what is real.
 - **NFL rookies included.** Rookies have no NFL snaps, so they are graded from
   their final college season (CollegeFootballData) plus draft capital and
   combine testing.
+- **Compare and stats.** Side-by-side player comparison and a sortable stat
+  table per team, in both leagues.
+- **NFL trade simulator.** Build a trade between any two teams and get cap
+  legality plus the grade and needs impact for both sides. A suggester finds
+  cap-legal upgrades for a team's biggest needs.
 
 ## Grading inputs
 
@@ -36,6 +43,22 @@ dropped rather than estimated, and the grade renormalizes around what is real.
   share and continuity). Public pass-block and run-block win rates are ESPN
   proprietary and not in any free feed, so they are not used or approximated.
 - **NFL rookies** (`cfbd`): college production, draft pick, combine testing.
+
+## Trade simulator (NFL)
+
+NFL trades are cap-driven with no salary matching. Each player's cap charge is
+his OverTheCap APY, and a team's commitment is the sum of its top-51 APYs, which
+mirrors the offseason top-51 rule. A trade is legal when both teams stay under
+the cap. The net cap change between teams is exact; the absolute cap-space number
+depends on `NFL_SALARY_CAP`, which you set to the current league-year cap.
+
+Beyond legality, every trade is re-graded: the tool swaps the rosters and
+recomputes each team's position grades, overall grade, and needs, so you see
+exactly what the deal does on the field.
+
+NBA trades are intentionally not included. Validating NBA legality requires
+player salaries and apron math, and `nba_api` carries no contract data, so doing
+it honestly is not possible from free sources.
 
 ## Setup
 
@@ -70,6 +93,7 @@ with the env vars in `.env.example`.
 config/      settings, grade bands
 data/        fetch_stats (NBA), nfl_fetch (NFL), cfbd_fetch (college)
 grading/     scale (percentile math), nba_grades, nfl_grades, team_report, pipeline
+trade/       nfl_trade (cap legality + grade impact + suggester)
 summary/     llm_summary (Claude prose + deterministic fallback)
 frontend/    Streamlit app + grade-display components
 api/         FastAPI grading endpoints (optional)
