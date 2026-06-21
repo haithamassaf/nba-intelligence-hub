@@ -69,3 +69,58 @@ class TeamsResponse(BaseModel):
 class RefreshResponse(BaseModel):
     status: str
     documents_loaded: int
+
+
+# ── NFL /players ─────────────────────────────────────────────────────
+
+class NflPlayerStats(BaseModel):
+    player_id: str
+    player_name: str
+    team: str
+    position: str | None = None
+    pos_group: str
+    games: int
+    completions: int
+    attempts: int
+    passing_yards: int
+    passing_tds: int
+    interceptions: int
+    carries: int
+    rushing_yards: int
+    rushing_tds: int
+    receptions: int
+    targets: int
+    receiving_yards: int
+    receiving_tds: int
+    scrimmage_yards: int
+    total_tds: int
+    fantasy_points: float
+    fantasy_points_ppr: float
+
+
+class NflPlayersResponse(BaseModel):
+    count: int
+    players: list[NflPlayerStats]
+
+
+# ── NFL /teams ───────────────────────────────────────────────────────
+
+class NflTeamInfo(BaseModel):
+    team: str
+    name: str
+    conference: str
+    division: str
+    wins: int
+    losses: int
+    ties: int
+    win_pct: float
+    points_for: int
+    points_against: int
+    point_diff: int
+    games: int
+    div_rank: int | None = None
+
+
+class NflTeamsResponse(BaseModel):
+    count: int
+    teams: list[NflTeamInfo]

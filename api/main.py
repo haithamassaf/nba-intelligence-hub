@@ -6,9 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router
 
 app = FastAPI(
-    title="NBA Intelligence Hub",
-    description="RAG-powered NBA analytics API — ask natural language questions grounded in real stats.",
-    version="1.0.0",
+    title="NFL & NBA Intelligence Hub",
+    description=(
+        "RAG-powered sports analytics API. Ask natural language questions "
+        "grounded in real NFL and NBA stats. Routes are sport-prefixed, "
+        "e.g. /nfl/ask and /nba/players."
+    ),
+    version="2.0.0",
 )
 
 app.add_middleware(
@@ -23,7 +27,11 @@ app.include_router(router)
 
 @app.get("/")
 async def root():
-    return {"message": "NBA Intelligence Hub API", "docs": "/docs"}
+    return {
+        "message": "NFL & NBA Intelligence Hub API",
+        "sports": ["nfl", "nba"],
+        "docs": "/docs",
+    }
 
 
 if __name__ == "__main__":
