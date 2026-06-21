@@ -3,17 +3,9 @@ nba_api>=1.4.1
 nflreadpy>=0.1.0
 pandas>=2.0.0
 polars>=1.0.0
-requests>=2.31.0
-
-# Summaries (optional Claude prose; the app runs fully without a key)
-anthropic>=0.39.0
 
 # Frontend
 streamlit>=1.30.0
 
 # Config
 python-dotenv>=1.0.0
-
-# API (optional — only needed to run api/main.py)
-# fastapi>=0.110.0
-# uvicorn>=0.27.0
