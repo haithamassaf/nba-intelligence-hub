@@ -11,7 +11,11 @@ each team's position grades and needs, using the grading engine.
 
 import pandas as pd
 
-from config.settings import NFL_SALARY_CAP
+try:
+    from config.settings import NFL_SALARY_CAP
+except ImportError:  # tolerate an older settings.py that predates this constant
+    import os
+    NFL_SALARY_CAP = float(os.getenv("NFL_SALARY_CAP", "300.0"))
 from grading.team_report import position_grades, overall_grade, needs as team_needs, to_letter
 
 TOP_N = 51

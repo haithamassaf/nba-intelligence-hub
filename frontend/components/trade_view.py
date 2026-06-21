@@ -5,8 +5,7 @@ import streamlit as st
 
 from frontend.components.grade_view import chip
 from grading.team_report import to_letter
-from trade.nfl_trade import evaluate_trade, suggest_trades
-from config.settings import NFL_SALARY_CAP
+from trade.nfl_trade import evaluate_trade, suggest_trades, NFL_SALARY_CAP
 
 
 def _label(df):
