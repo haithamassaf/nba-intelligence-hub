@@ -9,6 +9,7 @@ import time
 import pandas as pd
 from nba_api.stats.endpoints import (
     CommonTeamRoster,
+    PlayerCareerStats,
     LeagueDashPlayerStats,
     LeagueDashTeamStats,
     LeagueStandings,
@@ -89,6 +90,16 @@ def get_team_stats_advanced(season: str | None = None) -> pd.DataFrame:
     )
     _pause()
     return data.league_dash_team_stats.get_data_frame()
+
+
+# ── Career stats (for player compare) ────────────────────────────────
+
+def get_player_career(player_id: int):
+    """Per-game season splits + career totals for one player (regular season)."""
+    data = PlayerCareerStats(player_id=player_id, per_mode36="PerGame", timeout=NBA_API_TIMEOUT)
+    _pause()
+    return (data.season_totals_regular_season.get_data_frame(),
+            data.career_totals_regular_season.get_data_frame())
 
 
 # ── Convenience ──────────────────────────────────────────────────────

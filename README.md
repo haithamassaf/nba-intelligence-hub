@@ -7,8 +7,12 @@ deal.
 ## What it does
 
 - **Rosters.** Pick any team and see its full roster with stats, pulled fresh.
-- **Compare.** Put any two players side by side. NBA gets a radar chart of their
-  relative strengths; NFL gets a grouped bar chart of their stats.
+- **Compare players.** Put any two players side by side with a season or career
+  dropdown and a chart (radar for NBA, radar or grouped bars for NFL). Career
+  splits use traditional and production stats, which is what free historical data
+  provides; NFL career covers roughly the last 15 seasons.
+- **Compare rosters.** Pick two teams and see a side-by-side of their rosters
+  with a quick team summary (size, average age, total salary for the NFL).
 - **NFL trade simulator.** Build a trade between any two teams using multiple
   players and draft picks, check cap legality, see the cap impact on a chart, and
   get a front-office-style opinion on whether the deal is fair and realistic.
@@ -57,7 +61,3 @@ data/        fetch_stats (NBA), nfl_fetch (NFL), assemble (roster tables)
 trade/       nfl_trade (cap), picks (draft pick values), analysis (AI opinion)
 frontend/    Streamlit app + table / compare / trade / chart components
 ```
-
-## Next
-
-- A career / specific-season dropdown in Compare, for both leagues.

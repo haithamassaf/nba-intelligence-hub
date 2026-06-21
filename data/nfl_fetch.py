@@ -70,6 +70,12 @@ def get_team_meta() -> pd.DataFrame:
     return _pd(nfl.load_teams())
 
 
+def get_player_history(start_year: int, end_year: int) -> pd.DataFrame:
+    """Season-aggregated player stats across a range of seasons (for compare)."""
+    years = list(range(int(start_year), int(end_year) + 1))
+    return _pd(nfl.load_player_stats(seasons=years, summary_level="reg"))
+
+
 if __name__ == "__main__":
     print("stats season:", stats_season(), "| roster season:", roster_season())
     r = get_rosters()
