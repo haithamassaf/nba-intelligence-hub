@@ -7,6 +7,11 @@ from dotenv import load_dotenv
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(_PROJECT_ROOT / ".env", override=True)
 
+# Optional: Claude writes the trade opinion. The app runs without it (falls back
+# to a plain summary). Claude never sources a stat, only the written assessment.
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6")
+
 SPORTS = ("nfl", "nba")
 DEFAULT_SPORT = "nfl"
 

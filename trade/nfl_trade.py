@@ -34,6 +34,7 @@ def team_cap_space(table: pd.DataFrame, team: str, cap: float = NFL_SALARY_CAP) 
 
 def _player_rows(df: pd.DataFrame) -> list[dict]:
     return [{"name": r.get("player_name"), "pos": r.get("position"),
+             "age": int(r["age"]) if pd.notna(r.get("age")) else None,
              "apy": round(float(r["apy"]), 2) if pd.notna(r.get("apy")) else None}
             for _, r in df.iterrows()]
 

@@ -1,7 +1,7 @@
 [project]
 name = "nba-intelligence-hub"
-version = "4.0.0"
-description = "NFL & NBA roster viewer with player compare and a cap-legal NFL trade simulator"
+version = "4.1.0"
+description = "NFL & NBA roster viewer, player compare with charts, and a cap-legal NFL trade simulator with picks and AI analysis"
 requires-python = ">=3.11"
 
 [tool.setuptools.packages.find]

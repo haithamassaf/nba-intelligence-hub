@@ -96,7 +96,9 @@ def nba_section(table, teams):
     if view == "Rosters":
         render_roster_view(table, "team_abbr", names, NBA_COLS, "nba")
     else:
-        render_compare(table, "PLAYER_NAME", NBA_STATS, "nba")
+        radar_axes = [("PTS", "PTS"), ("REB", "REB"), ("AST", "AST"),
+                      ("STL", "STL"), ("BLK", "BLK"), ("TS_PCT", "TS%")]
+        render_compare(table, "PLAYER_NAME", NBA_STATS, "nba", radar_axes=radar_axes)
 
 
 st.title("🏟️ NFL & NBA Rosters")

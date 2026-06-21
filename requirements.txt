@@ -4,6 +4,12 @@ nflreadpy>=0.1.0
 pandas>=2.0.0
 polars>=1.0.0
 
+# Charts
+plotly>=5.18.0
+
+# Trade opinion (optional; app runs without a key)
+anthropic>=0.39.0
+
 # Frontend
 streamlit>=1.30.0
 
