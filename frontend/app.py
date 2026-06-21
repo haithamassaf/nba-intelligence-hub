@@ -86,7 +86,10 @@ def nba_career(player_id):
 def nfl_get_splits(gsis_id):
     if gsis_id is None:
         return {}
-    return nfl_splits(nfl_history(), gsis_id)
+    try:
+        return nfl_splits(nfl_history(), gsis_id)
+    except Exception:
+        return {}
 
 
 def nba_get_splits(player_id):
