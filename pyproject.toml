@@ -1,11 +1,11 @@
 [project]
 name = "nba-intelligence-hub"
-version = "2.0.0"
-description = "RAG-powered NFL & NBA analytics assistant"
+version = "3.0.0"
+description = "NFL & NBA roster grader: per-position grades from advanced stats, team needs, and award/champion projections"
 requires-python = ">=3.11"
 
 [tool.setuptools.packages.find]
-include = ["config*", "data*", "rag*", "api*", "frontend*"]
+include = ["config*", "data*", "grading*", "summary*", "api*", "frontend*"]
 
 [build-system]
 requires = ["setuptools>=64"]
