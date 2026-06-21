@@ -24,6 +24,7 @@ from data import nfl_fetch as nfl_data
 from frontend.components.tables import render_roster_table
 from frontend.components.compare_view import render_player_compare, render_roster_compare
 from frontend.components.trade_view import render_trades
+from frontend.components.assistant_view import render_assistant
 
 st.set_page_config(page_title="NFL & NBA Rosters", page_icon="🏟️", layout="wide")
 
@@ -34,7 +35,7 @@ NFL_COLS = [
     ("passing_yards", "Pass Yds"), ("passing_tds", "Pass TD"), ("interceptions", "INT"),
     ("rushing_yards", "Rush Yds"), ("rushing_tds", "Rush TD"),
     ("receptions", "Rec"), ("receiving_yards", "Rec Yds"), ("receiving_tds", "Rec TD"),
-    ("def_sacks", "Sacks"), ("def_tackles", "Tkl"), ("apy", "APY"),
+    ("def_sacks", "Sacks"), ("def_tackles", "Tkl"), ("cap_hit", "Cap Hit ($M)"), ("apy", "APY ($M)"),
 ]
 NFL_RADAR = [
     ("passing_yards", "Pass Yds"), ("passing_tds", "Pass TD"), ("rushing_yards", "Rush Yds"),
@@ -157,7 +158,7 @@ def nfl_section(table, teams):
         st.error("No NFL data loaded. The first run fetches live data; check your network and reload.")
         return
     names = nfl_names(teams)
-    view = st.radio("View", ["Rosters", "Compare players", "Compare rosters", "Trades"], horizontal=True, key="nfl_view")
+    view = st.radio("View", ["Rosters", "Compare players", "Compare rosters", "Trades", "Ask AI"], horizontal=True, key="nfl_view")
     if view == "Rosters":
         render_roster_view(table, "team", names, NFL_COLS, "nfl")
     elif view == "Compare players":
@@ -167,8 +168,10 @@ def nfl_section(table, teams):
         )
     elif view == "Compare rosters":
         render_roster_compare(table, "team", names, nfl_summary, NFL_COLS, "nfl")
-    else:
+    elif view == "Trades":
         render_trades(table, names)
+    else:
+        render_assistant(table, teams)
 
 
 def nba_section(table, teams):

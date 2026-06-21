@@ -7,6 +7,7 @@ import pandas as pd
 
 from data import fetch_stats as nba_data
 from data import nfl_fetch as nfl_data
+from data import cap_hits as nfl_cap_hits
 from data.rookie_scale import (
     estimate_rookie_apy,
     MIN_VALID_APY,
@@ -100,6 +101,19 @@ def build_nfl_roster() -> tuple[pd.DataFrame, pd.DataFrame]:
         rosters["apy"] = float("nan")
 
     rosters = _validate_and_fill_apy(rosters)
+
+    # Current-season cap hit (varies by season, unlike the flat contract APY).
+    try:
+        hits = nfl_cap_hits.get_current_cap_hits(nfl_data.roster_season())
+        if not hits.empty and "gsis_id" in rosters.columns:
+            rosters = rosters.merge(hits[["gsis_id", "cap_hit"]], on="gsis_id", how="left")
+    except Exception:
+        pass
+    if "cap_hit" in rosters.columns:
+        ch = pd.to_numeric(rosters["cap_hit"], errors="coerce")
+        rosters["cap_hit"] = ch.where((ch >= MIN_VALID_APY) & (ch <= MAX_VALID_APY)).round(2)
+    else:
+        rosters["cap_hit"] = float("nan")
 
     return rosters, nfl_data.get_team_meta()
 
